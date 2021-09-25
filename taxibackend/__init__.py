@@ -126,9 +126,9 @@ def create_app():
 		#amounts= request.json['amount']
 		
 		phoneno= '7338995417'
-		froma= 'bangalore'
-		toa= 'andhra'
-		times='2021-11-25T02:56'
+		froma= 'goa'
+		toa= 'bhopal'
+		times='2021-09-25T12:41'
 		shareds= 'T'
 		vtypess= 'suv'
 		amounts= 100
@@ -149,7 +149,7 @@ def create_app():
 
 			diff=date_time_obj-now
 
-			if abs(diff.total_seconds()) < 900:
+			if diff.total_seconds() < 1800:
 				 shareds= 'F'
 			else:
 				 shareds='T'
@@ -157,7 +157,7 @@ def create_app():
 
 		otps = random.randint(1000,9999)
 				
-		cursor.execute("INSERT INTO CurrentTrip (from_add, to_add, time, shared, vehicletype, amount, otp, Rphoneno) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",(froma, toa, times, shareds, vtypess, amounts, otps, phoneno))
+		cursor.execute("INSERT INTO CurrentTrip (from_add, to_add, time, shared, vehicletype, amount, otp, Rphoneno) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",(froma, toa, reqstr, shareds, vtypess, amounts, otps, phoneno))
 		dbconn.commit()
 		
 		cursor= dbconn.cursor()
@@ -165,7 +165,7 @@ def create_app():
 		tripids= cursor.fetchall()[0][0]
 		dbconn.commit()
 	
-		return jsonify({"tripids":tripids,"phone":phoneno, "shareds": shareds})
+		return jsonify({"tripids":tripids, "from_add":froma, "to_add":toa, "time": reqstr, "shared":shareds, "vehicletype":vtypess, "amount":amounts, "otp":otps, "phone":phoneno})
 	
 
 #########################################################################################################################
