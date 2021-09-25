@@ -1,8 +1,8 @@
 import psycopg2
 import urllib.parse as up
 
-from flask import Flask,g,request
-from flask import render_template,jsonify
+from flask import Flask,request
+from flask import jsonify
 from flask_cors import CORS,cross_origin
 from datetime import date
 from datetime import datetime
@@ -55,7 +55,7 @@ def create_app():
 		#phoneno= request.json['phoneno']
 		#password= request.json['pwd']
 	
-		phoneno= '7338995417'
+		phoneno= '7338995416'
 		password= 'gops123'
 		
 		#password encryption:
@@ -81,9 +81,9 @@ def create_app():
 		#password= request.json['pwd']
 		#typess= request.json['type']
 		
-		phoneno= '7338995418'
+		phoneno= '7338995416'
 		password= 'gops123'
-		typess= 'driver'
+		typess= 'rider'
 		
 		
 		#password encryption:
@@ -93,8 +93,8 @@ def create_app():
 			#names= request.json['name']
 			#emails= request.json['email']
 			
-			names= 'joseph mani'
-			emails= 'josephmani.uae@gmail.com'
+			names= 'gopu chad'
+			emails= 'gopu.reddy@gmail.com'
 		
 			
 			cursor.execute("INSERT INTO Signin_up (phoneno, pwd, type) VALUES(%s, %s, %s)",(phoneno, password, typess))
@@ -108,7 +108,7 @@ def create_app():
 			userid= cursor.fetchall()[0][0]
 			dbconn.commit()
 		
-			return jsonify({"rid":userid,"name":names,"email":emails})
+			return jsonify({"rid":userid,"name":names,"email":emails,"type":typess})
 		
 		elif typess=='driver':
 			#names= request.json['name']
@@ -118,12 +118,12 @@ def create_app():
 			#vnos= request.json['vehicleno']
 			#vtypess= request.json['vehicletype']
 			
-			names= 'jesvin'
-			emails= 'ftp.oman@gmail.com'
-			aadharids= '123456'
-			lnos= '9876'
-			vnos= 'KL123456'
-			vtypess= 'sedan'
+			names= 'joel'
+			emails= 'joel.dubai@gmail.com'
+			aadharids= '4444'
+			lnos= '98777'
+			vnos= 'D123456'
+			vtypess= 'auto'
 		
 			
 			cursor.execute("INSERT INTO Signin_up (phoneno, pwd, type) VALUES(%s, %s, %s)",(phoneno, password, typess))
@@ -137,7 +137,7 @@ def create_app():
 			userid= cursor.fetchall()[0][0]
 			dbconn.commit()
 		
-			return jsonify({"did":userid,"name":names,"aadharid":aadharids, "email":emails, "Dphoneno":phoneno, "licenseno":lnos, "vehicleno":vnos,"vehicletype":vtypess})
+			return jsonify({"did":userid,"name":names,"aadharid":aadharids, "email":emails, "Dphoneno":phoneno, "licenseno":lnos, "vehicleno":vnos,"vehicletype":vtypess,"type":typess})
 		
 	
 	
@@ -155,12 +155,12 @@ def create_app():
 		#amounts= request.json['amount']
 		
 		phoneno= '7338995417'
-		froma= 'meghalaya'
-		toa= 'chennai'
-		times='2021-09-25T20:30'
+		froma= 'zzz'
+		toa= 'ccc'
+		times='2021-09-25T23:35'
 		shareds= 'T'
 		vtypess= 'auto'
-		amounts= 100
+		amounts= 400
 		
 		#2018-06-07T00:00
 		#share ride verification
@@ -179,7 +179,7 @@ def create_app():
 		diff=date_time_obj-now
 
 		if shareds=='T':
-			if diff.total_seconds() < 1800:
+			if diff.total_seconds() < 1200: #20mins
 				 shareds= 'F'
 			else:
 				 shareds='T'
@@ -233,8 +233,8 @@ def create_app():
 		cursor = dbconn.cursor()
 		
 		#phonenos=request.json['phoneno']
-		phonenos='7338995417'
-		cursor.execute("SELECT * from TripHistory where Rphoneno=%s",(phonenos,))
+		phonenos='7338995416'
+		cursor.execute("SELECT * from TripHistory where Rphoneno=%s ORDER BY tripid",(phonenos,))
 		temp= cursor.fetchall()
 		result=[]
 		if temp:
@@ -255,18 +255,17 @@ def create_app():
 		
 		#phonenos=request.json['phoneno']
 		phonenos='7338995417'
-		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,tripstatus,Dphoneno from CurrentTrip where Rphoneno=%s",(phonenos,))
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,otp,bookingstatus,Dphoneno from CurrentTrip where Rphoneno=%s",(phonenos,))
 		temp= cursor.fetchall()
 		result=[]
 		if temp:
-			for tripids,froma,toa,times,shareds,vtypess,amounts,otps,Dphones in temp:
-				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"otp":otps,"Dphone":Dphones}
+			for tripids,froma,toa,times,shareds,vtypess,amounts,otps,bookingstats,Dphones in temp:
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"otp":otps,"bookingstatus":bookingstats,"Dphoneno":Dphones}
 				result.append(dicts)
 			
 			return jsonify(result)
 		else:
 			return jsonify(message="You have no scheduled rides.")	
-
 #########################################################################################################################
 				
 	@app.route("/get-profile-customer")
@@ -324,10 +323,10 @@ def create_app():
 		cursor = dbconn.cursor()
 		#vtypess=request.json['vehicletype']
 		#phonenos=request.json['phoneno']
-		phonenos='7338995418'
-		vtypess='suv'
+		phonenos='7338995419'
+		vtypess='auto'
 		
-		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,bookingstatus from CurrentTrip where bookingstatus=%s and vehicletype=%s",('Pending',vtypess))
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,bookingstatus from CurrentTrip where bookingstatus=%s and vehicletype=%s ORDER BY tripid",('Pending',vtypess))
 		temp= cursor.fetchall()
 		result=[]
 		if temp:
@@ -342,14 +341,15 @@ def create_app():
 
 #########################################################################################################################
 	
+
 	@app.route("/accept-rides")
 	def driveracceptrides():
 		cursor = dbconn.cursor()
 		#tripids=request.json['tripid']
 		#Dphonenos=request.json['Dphoneno']
-		
-		tripids='9'
-		Dphonenos='7338995418'
+
+		tripids='13'
+		Dphonenos='7338995419'
 
 		tripstats='Ongoing'
 		bookingstats='Accepted'
@@ -357,11 +357,21 @@ def create_app():
 		dbconn.commit()
 		
 		cursor = dbconn.cursor()
+		cursor.execute("UPDATE TripHistory SET tripstatus=%s, Dphoneno=%s  where tripid=%s",(tripstats,Dphonenos,tripids))
+		dbconn.commit()
+
+		cursor = dbconn.cursor()
 		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,otp,bookingstatus,tripstatus,Rphoneno from CurrentTrip where tripid=%s",(tripids,))
+
 		
 		temp= cursor.fetchone()
-		tripids,froma,toa,times,shareds,vtypess,amounts,otps,bookingstats,tripstats,Rphonenos=temp
-		return jsonify({"tripid":tripids,"from_add": froma, "to_add":toa, "time":times,"shared":shareds,"vehicletype":vtypess,"amount":amounts, "otp":otps,"bookingstatus":bookingstats,"tripstatus":tripstats,"Rphoneno":Rphonenos})
+		
+		if temp:
+			tripids,froma,toa,times,shareds,vtypess,amounts,otps,bookingstats,tripstats,Rphonenos=temp
+			return jsonify({"tripid":tripids,"from_add": froma, "to_add":toa, "time":times,"shared":shareds,"vehicletype":vtypess,"amount":amounts, "otp":otps,"bookingstatus":bookingstats,"tripstatus":tripstats,"Rphoneno":Rphonenos})
+		
+		else:
+			return jsonify(message="Ride not scheduled")
 
 #########################################################################################################################
 
@@ -370,20 +380,20 @@ def create_app():
 		cursor = dbconn.cursor()
 		#tripids=request.json['tripid']
 
-
-		tripids='9'
+		tripids='11'
 		tripstats='Completed'
 
-		cursor.execute("UPDATE CurrentTrip SET  tripstatus=%s where tripid=%s",(tripstats, tripids))
+		cursor.execute("DELETE from CurrentTrip where tripid=%s",(tripids,))
 		dbconn.commit()
 
 
 		cursor = dbconn.cursor()
-		cursor.execute("UPDATE TripHistory SET  tripstatus=%s where tripid=%s",(tripstats, tripids))
+		cursor.execute("UPDATE TripHistory SET tripstatus=%s where tripid=%s",(tripstats, tripids))
 		dbconn.commit()
 
 		cursor = dbconn.cursor()
-		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,tripstatus from CurrentTrip where tripid=%s",(tripids,))
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,tripstatus from TripHistory where tripid=%s",(tripids,))
+		
 
 		temp= cursor.fetchone()
 		tripids,froma,toa,times,shareds,vtypess,amounts,tripstats=temp
