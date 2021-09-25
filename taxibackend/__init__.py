@@ -81,9 +81,9 @@ def create_app():
 		#password= request.json['pwd']
 		#typess= request.json['type']
 		
-		phoneno= '7338995417'
+		phoneno= '7338995418'
 		password= 'gops123'
-		typess= 'rider'
+		typess= 'driver'
 		
 		
 		#password encryption:
@@ -110,6 +110,35 @@ def create_app():
 		
 			return jsonify({"rid":userid,"name":names,"email":emails})
 		
+		elif typess=='driver':
+			#names= request.json['name']
+			#emails= request.json['email']
+			#aadharids= request.json['aadharid']
+			#lnos= request.json['licenseno']
+			#vnos= request.json['vehicleno']
+			#vtypess= request.json['vehicletype']
+			
+			names= 'jesvin'
+			emails= 'ftp.oman@gmail.com'
+			aadharids= '123456'
+			lnos= '9876'
+			vnos= 'KL123456'
+			vtypess= 'sedan'
+		
+			
+			cursor.execute("INSERT INTO Signin_up (phoneno, pwd, type) VALUES(%s, %s, %s)",(phoneno, password, typess))
+			dbconn.commit()
+			
+			cursor = dbconn.cursor()
+			cursor.execute("INSERT INTO Driver (name, aadharid, email, Dphoneno, licenseno, vehicleno, vehicletype) VALUES(%s, %s, %s, %s, %s, %s, %s)",(names, aadharids, emails, phoneno, lnos, vnos, vtypess))
+			dbconn.commit()
+			
+			cursor.execute("SELECT MAX(did) from Driver")
+			userid= cursor.fetchall()[0][0]
+			dbconn.commit()
+		
+			return jsonify({"did":userid,"name":names,"aadharid":aadharids, "email":emails, "Dphoneno":phoneno, "licenseno":lnos, "vehicleno":vnos,"vehicletype":vtypess})
+		
 	
 	
 ########################################  RIDER  ###############################################	
@@ -126,11 +155,11 @@ def create_app():
 		#amounts= request.json['amount']
 		
 		phoneno= '7338995417'
-		froma= 'Delhi'
-		toa= 'Chennai'
-		times='2021-09-25T19:30'
+		froma= 'meghalaya'
+		toa= 'chennai'
+		times='2021-09-25T20:30'
 		shareds= 'T'
-		vtypess= 'Lorry'
+		vtypess= 'auto'
 		amounts= 100
 		
 		#2018-06-07T00:00
@@ -180,7 +209,7 @@ def create_app():
 	def CancelRide():
 		cursor = dbconn.cursor()
 		#tripids=request.json['tripid']
-		tripids='7' 
+		tripids='8' 
 		cursor.execute("DELETE from CurrentTrip where tripid=%s",(tripids,))
 		dbconn.commit()
 		
@@ -210,7 +239,7 @@ def create_app():
 		result=[]
 		if temp:
 			for tripids,froma,toa,times,shareds,vtypess,amounts,tripstatuss,Rphones,Dphones in temp:
-				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"tripstatus":tripstatuss,"Rphone":Rphones,"Dphone":Dphones}
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"tripstatus":tripstatuss,"Rphoneno":Rphones,"Dphoneno":Dphones}
 				result.append(dicts)
 			
 			return jsonify(result)
@@ -254,39 +283,89 @@ def create_app():
 ##################################################   DRIVER    #####################################################
 	
 	
+	@app.route("/get-history-driver")
+	def driverhistory():
+		cursor = dbconn.cursor()
+		
+		#phonenos=request.json['phoneno']
+		phonenos='7338995418'
+		cursor.execute("SELECT * from TripHistory where Dphoneno=%s",(phonenos,))
+		temp= cursor.fetchall()
+		result=[]
+		if temp:
+			for tripids,froma,toa,times,shareds,vtypess,amounts,tripstatuss,Rphones,Dphones in temp:
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"tripstatus":tripstatuss,"Rphoneno":Rphones,"Dphoneno":Dphones}
+				result.append(dicts)
+			
+			return jsonify(result)
+		else:
+			return jsonify(message="You have no rides yet.")	
+
+#########################################################################################################################
+				
+	@app.route("/get-profile-driver")
+	def driverprofile():
+		cursor = dbconn.cursor()
+		
+		#phonenos=request.json['phoneno']
+		phonenos='7338995418'
 	
-
-
-
-
-
-
-
-
+		cursor.execute("SELECT name, aadharid, email, Dphoneno, licenseno, vehicleno, vehicletype from Driver where Dphoneno=%s",(phonenos,))
+		dbconn.commit()
+		
+		temp= cursor.fetchone()
+		names,aadharids,emails,Dphones,lnos,vnos,vtypess=temp
+		return jsonify({"name":names,"aadharid": aadharids, "email":emails, "Dphoneno":Dphones,"licenseno":lnos,"vehicleno":vnos,"vehicletype":vtypess})
 
 #########################################################################################################################
 
+	@app.route("/get-available-rides")
+	def schedulingdriverrides():
+		cursor = dbconn.cursor()
+		#vtypess=request.json['vehicletype']
+		#phonenos=request.json['phoneno']
+		phonenos='7338995418'
+		vtypess='suv'
+		
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,bookingstatus from CurrentTrip where bookingstatus=%s and vehicletype=%s",('Pending',vtypess))
+		temp= cursor.fetchall()
+		result=[]
+		if temp:
+			for tripids,froma,toa,times,shareds,vtypess,amounts,bookstats in temp:
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa,"time":times, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"bookingstatus":bookstats}
+				result.append(dicts)
+			
+			return jsonify(result)
+		else:
+			return jsonify(message="You have no rides available currently.")	
+	
 
+#########################################################################################################################
+	
+	@app.route("/accept-rides")
+	def driveracceptrides():
+		cursor = dbconn.cursor()
+		#tripids=request.json['tripid']
+		#Dphonenos=request.json['Dphoneno']
+		
+		tripids='9'
+		Dphonenos='7338995418'
 
+		tripstats='Ongoing'
+		bookingstats='Accepted'
+		cursor.execute("UPDATE CurrentTrip SET bookingstatus=%s, tripstatus=%s, Dphoneno=%s  where tripid=%s",(bookingstats,tripstats,Dphonenos,tripids))
+		dbconn.commit()
+		
+		cursor = dbconn.cursor()
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,otp,bookingstatus,tripstatus,Rphoneno from CurrentTrip where tripid=%s",(tripids,))
+		
+		temp= cursor.fetchone()
+		tripids,froma,toa,times,shareds,vtypess,amounts,otps,bookingstats,tripstats,Rphonenos=temp
+		return jsonify({"tripid":tripids,"from_add": froma, "to_add":toa, "time":times,"shared":shareds,"vehicletype":vtypess,"amount":amounts, "otp":otps,"bookingstatus":bookingstats,"tripstatus":tripstats,"Rphoneno":Rphonenos})
 
+#########################################################################################################################
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		
 
 
 	return app
