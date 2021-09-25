@@ -45,7 +45,7 @@ create table CurrentTrip(
 );	
 
 create table TripHistory(
-	tripid serial primary key,
+	tripid text primary key,
 	from_add text not null,
 	to_add text not null,
 	time text not null,
@@ -58,4 +58,5 @@ create table TripHistory(
 );
 
 ALTER TABLE ONLY CurrentTrip ALTER COLUMN bookingstatus SET DEFAULT 'Pending';
-ALTER TABLE ONLY CurrentTrip ALTER COLUMN tripstatus SET DEFAULT 'Pending';	
+ALTER TABLE ONLY CurrentTrip ALTER COLUMN tripstatus SET DEFAULT 'Pending';
+ALTER TABLE ONLY TripHistory ALTER COLUMN tripstatus SET DEFAULT 'Pending';	

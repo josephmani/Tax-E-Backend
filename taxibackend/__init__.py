@@ -50,7 +50,7 @@ def create_app():
 		
 	@app.route("/signin")
 	#@cross_origin())
-	def loginpage():
+	def signinpage():
 		cursor = dbconn.cursor()		
 		#phoneno= request.json['phoneno']
 		#password= request.json['pwd']
@@ -115,7 +115,7 @@ def create_app():
 ########################################  RIDER  ###############################################	
 	
 	@app.route("/book-ride")
-	def fillnotes():
+	def ridebooking():
 		cursor = dbconn.cursor()
 		#phoneno= request.json['phoneno']
 		#froma= request.json['from_add']
@@ -126,35 +126,36 @@ def create_app():
 		#amounts= request.json['amount']
 		
 		phoneno= '7338995417'
-		froma= 'goa'
-		toa= 'bhopal'
-		times='2021-09-25T12:41'
+		froma= 'Delhi'
+		toa= 'Chennai'
+		times='2021-09-25T19:30'
 		shareds= 'T'
-		vtypess= 'suv'
+		vtypess= 'Lorry'
 		amounts= 100
 		
 		#2018-06-07T00:00
 		#share ride verification
 	
+		
+		now = datetime.now()
+		yr=times[2:4]
+		month=times[5:7]
+		day=times[8:10]
+		hr=times[11:13]
+		minute=times[14:]
+		reqstr=day+'/'+month+'/'+yr+' '+hr+':'+minute+':00'
+
+		date_time_obj = datetime.strptime(reqstr, '%d/%m/%y %H:%M:%S')
+
+		diff=date_time_obj-now
+
 		if shareds=='T':
-			now = datetime.now()
-			yr=times[2:4]
-			month=times[5:7]
-			day=times[8:10]
-			hr=times[11:13]
-			minute=times[14:]
-			reqstr=day+'/'+month+'/'+yr+' '+hr+':'+minute+':00'
-
-			date_time_obj = datetime.strptime(reqstr, '%d/%m/%y %H:%M:%S')
-
-			diff=date_time_obj-now
-
 			if diff.total_seconds() < 1800:
 				 shareds= 'F'
 			else:
 				 shareds='T'
 
-
+		
 		otps = random.randint(1000,9999)
 				
 		cursor.execute("INSERT INTO CurrentTrip (from_add, to_add, time, shared, vehicletype, amount, otp, Rphoneno) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",(froma, toa, reqstr, shareds, vtypess, amounts, otps, phoneno))
@@ -162,105 +163,132 @@ def create_app():
 		
 		cursor= dbconn.cursor()
 		cursor.execute("SELECT MAX(tripid) from CurrentTrip where Rphoneno=%s",(phoneno,))
-		tripids= cursor.fetchall()[0][0]
+		tripids= str(cursor.fetchall()[0][0])
 		dbconn.commit()
-	
+		
+		cursor= dbconn.cursor()
+		cursor.execute("INSERT INTO TripHistory (tripid, from_add, to_add, time, shared, vehicletype, amount, Rphoneno) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",(tripids, froma, toa, reqstr, shareds, vtypess, amounts, phoneno))
+		dbconn.commit()
+		
+		
 		return jsonify({"tripids":tripids, "from_add":froma, "to_add":toa, "time": reqstr, "shared":shareds, "vehicletype":vtypess, "amount":amounts, "otp":otps, "phone":phoneno})
 	
 
 #########################################################################################################################
-
-	@app.route("/getallnotes", methods=["GET"])
-	def getnotes():
-		cursor = dbconn.cursor()
-		userid= request.json['id']		
-		
-		cursor.execute("SELECT nid,title,dcp,dates,hids from notes where uid= %s",(userid,))
-		temp= cursor.fetchall()
-		
-		result=[]
-		for notesid,ntitle,description,dated,hashtag_ids in temp:
-				dicts={"notesid":notesid, "title":ntitle, "description":description, "date":dated, "hashtags":hashtag_ids,"id":userid}
-				result.append(dicts)
 	
-		return jsonify(result)
+	@app.route("/cancel-ride")
+	def CancelRide():
+		cursor = dbconn.cursor()
+		#tripids=request.json['tripid']
+		tripids='7' 
+		cursor.execute("DELETE from CurrentTrip where tripid=%s",(tripids,))
+		dbconn.commit()
+		
+		cursor= dbconn.cursor()
+		cursor.execute("SELECT from_add,to_add,tripid from TripHistory where tripid=%s",(tripids,))
+		dbconn.commit()
+
+		temp= cursor.fetchone()
+		froma,toa,tripids=temp
+		
+		cursor = dbconn.cursor()
+		tripstatuss="Cancelled"
+		cursor.execute("UPDATE TripHistory SET tripstatus=%s where tripid=%s",(tripstatuss,tripids))
+		dbconn.commit()
+		return jsonify({"tripid":tripids, "from_add":froma, "to_add":toa, "tripstatus": tripstatuss})
 
 #########################################################################################################################
 		
-	@app.route("/update", methods=["PUT"])
-	def updatenote():
-		dated=str(date.today())
+	@app.route("/get-history-customer")
+	def customerhistory():
 		cursor = dbconn.cursor()
-		userid= request.json['id']
-		notesid= request.json['notesid']
-		ntitle= request.json['title']
-		description= request.json['description']
-		hashtag_ids= request.json['hashtags']
-		hash_id=[v.strip() for v in hashtag_ids.split(',')]
 		
-		
-		cursor = dbconn.cursor()
-		cursor.execute("UPDATE notes SET title=%s, dcp=%s, dates=%s, hids=%s where nid=%s and uid=%s",(ntitle, description, dated, hashtag_ids, notesid, userid))
-		cursor.execute("DELETE FROM hashtags where nid=%s and uid=%s",(notesid, userid))
-		dbconn.commit()
-		
-		hashidlist=[]
-		for hashes in hash_id:	
-				cursor = dbconn.cursor()
-				cursor.execute("INSERT INTO hashtags (label,nid,uid) SELECT %s, %s, %s where NOT exists( select 1 from hashtags where label=%s)",(hashes, notesid, userid, hashes))
-				dbconn.commit()
-				cursor = dbconn.cursor()
-				cursor.execute("SELECT hid from hashtags where label=%s and uid=%s",(hashes,userid))
-				hashids= cursor.fetchall()[0][0]
-				hashidlist.append(hashids)
-				dbconn.commit()
-		
-		cursor = dbconn.cursor()
-		cursor.execute("SELECT title,dcp,dates,hids from notes where nid= %s and uid=%s",(notesid,userid))
-		values= cursor.fetchall()
-		dbconn.commit()
-		return jsonify({"notesid":notesid, "title":ntitle, "description":description, "date":dated, "hashtags":hashtag_ids, "hashtagids": hashidlist ,"id":userid})	
+		#phonenos=request.json['phoneno']
+		phonenos='7338995417'
+		cursor.execute("SELECT * from TripHistory where Rphoneno=%s",(phonenos,))
+		temp= cursor.fetchall()
+		result=[]
+		if temp:
+			for tripids,froma,toa,times,shareds,vtypess,amounts,tripstatuss,Rphones,Dphones in temp:
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"tripstatus":tripstatuss,"Rphone":Rphones,"Dphone":Dphones}
+				result.append(dicts)
+			
+			return jsonify(result)
+		else:
+			return jsonify(message="You have no rides yet.")	
+
 		
 #########################################################################################################################		
 				
-	@app.route("/delete", methods=["DELETE"])
-	def deletenote():
+	@app.route("/get-scheduled-rides")
+	def schedulingrides():
 		cursor = dbconn.cursor()
-		userid= request.json['id']
-		notesid= request.json['notesid']
 		
-		cursor.execute("SELECT title,dcp,dates,hids from notes where uid= %s and nid=%s",(userid,notesid))
-		temp= cursor.fetchone()
-		ntitle,description,dated,hashtag_ids=temp
-		dbconn.commit()
-		
-		cursor = dbconn.cursor()
-		cursor.execute("SELECT hids from notes where uid= %s and nid=%s",(userid,notesid))
-		hashidlist= cursor.fetchone()
-		dbconn.commit()
-		
-		
-		cursor = dbconn.cursor()
-		cursor.execute("DELETE FROM hashtags where nid=%s and uid=%s",(notesid, userid))
-		cursor.execute("DELETE FROM notes where nid=%s and uid=%s",(notesid, userid))
-		dbconn.commit()
-		return jsonify({"notesid":notesid, "title":ntitle, "description":description, "date":dated, "hashtags":hashtag_ids, "hashtagids": hashidlist ,"id":userid})
+		#phonenos=request.json['phoneno']
+		phonenos='7338995417'
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,tripstatus,Dphoneno from CurrentTrip where Rphoneno=%s",(phonenos,))
+		temp= cursor.fetchall()
+		result=[]
+		if temp:
+			for tripids,froma,toa,times,shareds,vtypess,amounts,otps,Dphones in temp:
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"otp":otps,"Dphone":Dphones}
+				result.append(dicts)
+			
+			return jsonify(result)
+		else:
+			return jsonify(message="You have no scheduled rides.")	
 
 #########################################################################################################################
-	
-	@app.route("/hashtags", methods=["GET"])
-	def gethashtags():
+				
+	@app.route("/get-profile-customer")
+	def customerprofile():
 		cursor = dbconn.cursor()
-		userid= request.json['id']
-		cursor.execute("SELECT hid,label from hashtags where uid= %s",(userid,))
-		values= cursor.fetchall()
-		dbconn.commit()
-		result=[]
-		for hashid,hashes in values:
-			dicts={"hashtagid":hashid, "hashtag":hashes}
-			result.append(dicts)
 		
-		return jsonify(result)		
+		#phonenos=request.json['phoneno']
+		phonenos='7338995417'
+		cursor.execute("SELECT name,email,Rphoneno from Rider where Rphoneno=%s",(phonenos,))
+		temp= cursor.fetchone()
+		names,emails,Rphones=temp
+		return jsonify({"name":names,"email":emails, "Rphoneno":Rphones})
+						
+##################################################   DRIVER    #####################################################
 	
+	
+	
+
+
+
+
+
+
+
+
+
+#########################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	return app
+
 	
