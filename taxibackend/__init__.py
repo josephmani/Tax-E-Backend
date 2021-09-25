@@ -365,7 +365,32 @@ def create_app():
 
 #########################################################################################################################
 
-		
+	@app.route("/trip-completed-driver")
+	def drivercompleterides():
+		cursor = dbconn.cursor()
+		#tripids=request.json['tripid']
+
+
+		tripids='9'
+		tripstats='Completed'
+
+		cursor.execute("UPDATE CurrentTrip SET  tripstatus=%s where tripid=%s",(tripstats, tripids))
+		dbconn.commit()
+
+
+		cursor = dbconn.cursor()
+		cursor.execute("UPDATE TripHistory SET  tripstatus=%s where tripid=%s",(tripstats, tripids))
+		dbconn.commit()
+
+		cursor = dbconn.cursor()
+		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,tripstatus from CurrentTrip where tripid=%s",(tripids,))
+
+		temp= cursor.fetchone()
+		tripids,froma,toa,times,shareds,vtypess,amounts,tripstats=temp
+		return jsonify({"tripid":tripids,"from_add": froma, "to_add":toa, "time":times,"shared":shareds,"vehicletype":vtypess,"amount":amounts, "tripstatus":tripstats})
+
+#########################################################################################################################
+
 
 
 	return app
