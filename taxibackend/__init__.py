@@ -47,32 +47,79 @@ def create_app():
 		return response
 
 #########################################################################################################################
-
 	@app.route("/signin",methods=["POST"])
-	#@cross_origin())
+		#@cross_origin())
 	def signinpage():
 		cursor = dbconn.cursor()
-		phoneno= request.json['phoneno']
+		phonenos= request.json['phoneno']
 		password= request.json['pwd']
-		#
+		typess= request.json['type']
 		# phoneno= '7338995416'
 		# password= 'gops123'
+		# typess='driver'
+
 
 		#password encryption:
 		password=hashlib.sha256(password.encode('utf-8')).hexdigest() #hashvalue
 
-		cursor.execute("SELECT phoneno,pwd,type from Signin_up where phoneno=%s",(phoneno,))
-		temp= cursor.fetchone()
+		cursor.execute("SELECT pwd from Signin_up where phoneno=%s",(phonenos,))
+		temp= cursor.fetchone()[0]
+		dbconn.commit()
+
+
 		if temp:
-			phone,passcode,typess=temp
-			if typess=="rider":
-				typess="customer"
+			passcode=temp
 			if passcode==password:
-				return jsonify({"phoneno":phone,"pwd":passcode,"type":typess})
+				if typess=='rider':
+					cursor = dbconn.cursor()
+					cursor.execute("SELECT * from Rider where Rphoneno=%s",(phonenos,))
+					dbconn.commit()
+					tempone= cursor.fetchone()
+					rids,names,emails,Rphones=tempone
+					return jsonify({"rid":rids,"name":names,"email":emails,"phoneno":Rphones})
+
+				elif typess=='driver':
+					cursor = dbconn.cursor()
+					cursor.execute("SELECT * from Driver where Dphoneno=%s",(phonenos,))
+					dbconn.commit()
+					temptwo= cursor.fetchone()
+					userid,names,aadharids,emails,Dphonenos,lnos,vnos,vtypess=temptwo
+					return jsonify({"did":userid,"name":names,"aadharid":aadharids, "email":emails, "phoneno":Dphonenos, "licenseno":lnos, "vehicleno":vnos,"vehicletype":vtypess})
+
+
 			else:
-				return jsonify(message="Incorrect password")
+					return jsonify(message="Incorrect Password")
 		else:
 			return jsonify(message="Complete the registration")
+
+
+
+	#
+	# @app.route("/signin",methods=["POST"])
+	# #@cross_origin())
+	# def signinpage():
+	# 	cursor = dbconn.cursor()
+	# 	phoneno= request.json['phoneno']
+	# 	password= request.json['pwd']
+	# 	#
+	# 	# phoneno= '7338995416'
+	# 	# password= 'gops123'
+	#
+	# 	#password encryption:
+	# 	password=hashlib.sha256(password.encode('utf-8')).hexdigest() #hashvalue
+	#
+	# 	cursor.execute("SELECT phoneno,pwd,type from Signin_up where phoneno=%s",(phoneno,))
+	# 	temp= cursor.fetchone()
+	# 	if temp:
+	# 		phone,passcode,typess=temp
+	# 		if typess=="rider":
+	# 			typess="customer"
+	# 		if passcode==password:
+	# 			return jsonify({"phoneno":phone,"pwd":passcode,"type":typess})
+	# 		else:
+	# 			return jsonify(message="Incorrect password")
+	# 	else:
+	# 		return jsonify(message="Complete the registration")
 
 #########################################################################################################################
 
@@ -145,24 +192,24 @@ def create_app():
 
 ########################################  RIDER  ###############################################
 
-	@app.route("/book-ride")
+	@app.route("/book-ride",methods=["POST"])
 	def ridebooking():
 		cursor = dbconn.cursor()
-		#phoneno= request.json['phoneno']
-		#froma= request.json['from_add']
-		#toa= request.json['to_add']
-		#times= request.json['time']
-		#shareds= request.json['shared']
-		#vtypess= request.json['vehicletype']
-		#amounts= request.json['amount']
+		phoneno= request.json['phoneno']
+		froma= request.json['from_add']
+		toa= request.json['to_add']
+		times= request.json['time']
+		shareds= request.json['shared']
+		vtypess= request.json['vehicletype']
+		amounts= request.json['amount']
 
-		phoneno= '7338995417'
-		froma= 'zzz'
-		toa= 'ccc'
-		times='2021-09-25T23:35'
-		shareds= 'T'
-		vtypess= 'auto'
-		amounts= 400
+		# phoneno= '7338995417'
+		# froma= 'zzz'
+		# toa= 'ccc'
+		# times='2021-09-25T23:35'
+		# shareds= 'T'
+		# vtypess= 'auto'
+		# amounts= 400
 
 		#2018-06-07T00:00
 		#share ride verification
@@ -230,7 +277,7 @@ def create_app():
 
 #########################################################################################################################
 
-	@app.route("/get-history-customer")
+	@app.route("/get-history-customer",methods=["POST"])
 	def customerhistory():
 		cursor = dbconn.cursor()
 
@@ -251,18 +298,18 @@ def create_app():
 
 #########################################################################################################################
 
-	@app.route("/get-scheduled-rides")
+	@app.route("/get-scheduled-rides",methods=['POST'])
 	def schedulingrides():
 		cursor = dbconn.cursor()
 
-		#phonenos=request.json['phoneno']
-		phonenos='7338995417'
+		phonenos=request.json['phoneno']
+		# phonenos='7338995417'
 		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,otp,bookingstatus,Dphoneno from CurrentTrip where Rphoneno=%s",(phonenos,))
 		temp= cursor.fetchall()
 		result=[]
 		if temp:
 			for tripids,froma,toa,times,shareds,vtypess,amounts,otps,bookingstats,Dphones in temp:
-				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"otp":otps,"bookingstatus":bookingstats,"Dphoneno":Dphones}
+				dicts={"tripid":tripids, "from_add":froma, "to_add":toa, "shared":shareds, "vehicletype":vtypess,"amount":amounts,"otp":otps,"bookingstatus":bookingstats,"Dphoneno":Dphones,"time":times}
 				result.append(dicts)
 
 			return jsonify(result)
@@ -284,12 +331,12 @@ def create_app():
 ##################################################   DRIVER    #####################################################
 
 
-	@app.route("/get-history-driver")
+	@app.route("/get-history-driver",methods=["POST"])
 	def driverhistory():
 		cursor = dbconn.cursor()
 
-		#phonenos=request.json['phoneno']
-		phonenos='7338995418'
+		phonenos=request.json['phoneno']
+		# phonenos='7338995418'
 		cursor.execute("SELECT * from TripHistory where Dphoneno=%s",(phonenos,))
 		temp= cursor.fetchall()
 		result=[]
@@ -320,13 +367,13 @@ def create_app():
 
 #########################################################################################################################
 
-	@app.route("/get-available-rides")
+	@app.route("/get-available-rides",methods=["POST"])
 	def schedulingdriverrides():
 		cursor = dbconn.cursor()
-		#vtypess=request.json['vehicletype']
-		#phonenos=request.json['phoneno']
-		phonenos='7338995419'
-		vtypess='auto'
+		vtypess=request.json['vehicletype']
+		phonenos=request.json['phoneno']
+		# phonenos='7338995419'
+		# vtypess='auto'
 
 		cursor.execute("SELECT tripid,from_add,to_add,time,shared,vehicletype,amount,bookingstatus from CurrentTrip where bookingstatus=%s and vehicletype=%s ORDER BY tripid",('Pending',vtypess))
 		temp= cursor.fetchall()
