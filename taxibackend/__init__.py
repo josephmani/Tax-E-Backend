@@ -11,6 +11,9 @@ import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 
+
+import math
+import requests
 import random
 import hashlib
 
@@ -214,7 +217,43 @@ def create_app():
 		#2018-06-07T00:00
 		#share ride verification
 
-
+				
+		d={'NITC': {'NITC': 0,
+		  'Calicut Airport': 33,
+		  'Calicut Beach': 24,
+		  'Calicut Railway Station': 23,
+		  'Kozhikode  New Bus Stand': 22},
+			
+		  'Calicut Airport': {'NITC': 33,
+		  'Calicut Airport': 0,
+		  'Calicut Beach': 30,
+		  'Calicut Railway Station': 26,
+		  'Kozhikode  New Bus Stand': 29},
+			
+			'Calicut Beach': {'NITC': 24,
+		  'Calicut Airport': 30,
+		  'Calicut Beach': 0,
+		  'Calicut Railway Station': 4.2,
+		  'Kozhikode  New Bus Stand': 3.3},
+			
+			'Calicut Railway Station': {'NITC': 23,
+		  'Calicut Airport': 26,
+		  'Calicut Beach': 4.2,
+		  'Calicut Railway Station': 0,
+		  'Kozhikode  New Bus Stand': 0.6},
+			
+			'Kozhikode  New Bus Stand': {'NITC': 22,
+		  'Calicut Airport': 29,
+		  'Calicut Beach': 3.3,
+		  'Calicut Railway Station': 0.6,
+		  'Kozhikode  New Bus Stand': 0}
+		  }
+		
+		distance=d[froma][toa]
+		amounts=20*distance
+		#Rs.20 for km.
+		
+		
 		now = datetime.now()
 		yr=times[2:4]
 		month=times[5:7]
